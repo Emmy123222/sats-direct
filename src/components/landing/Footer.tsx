@@ -1,4 +1,4 @@
-import BitcoinIcon from "@/components/icons/BitcoinIcon";
+import Logo from "@/components/ui/Logo";
 
 export const Footer = () => {
   return (
@@ -6,8 +6,8 @@ export const Footer = () => {
       <div className="container px-4">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <BitcoinIcon size={32} className="text-primary" />
-            <span className="text-xl font-bold">SatsGate</span>
+            <Logo size={32} />
+            <span className="text-xl font-bold font-display">SatsGate</span>
           </div>
           
           <p className="text-sm text-muted-foreground">

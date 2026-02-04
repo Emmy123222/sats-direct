@@ -86,7 +86,9 @@ export default {
         pulse: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
       },
       fontFamily: {
-        mono: ["JetBrains Mono", "Fira Code", "monospace"],
+        sans: ['Bitcount Single', 'Bitcount Prop Single', 'system-ui', 'sans-serif'],
+        mono: ['Bitcount Prop Single', 'JetBrains Mono', 'Fira Code', 'monospace'],
+        display: ['Bitcount Single', 'Bitcount Prop Single', 'system-ui', 'sans-serif'],
       },
     },
   },

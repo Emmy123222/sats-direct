@@ -28,7 +28,7 @@ export const Benefits = () => {
     <section className="py-20 border-t border-border">
       <div className="container px-4">
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold font-display mb-4">
             Why merchants choose <span className="text-primary">SatsGate</span>
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
@@ -45,7 +45,7 @@ export const Benefits = () => {
               <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
                 <benefit.icon className="w-6 h-6 text-primary" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">{benefit.title}</h3>
+              <h3 className="text-xl font-semibold font-display mb-2">{benefit.title}</h3>
               <p className="text-muted-foreground">{benefit.description}</p>
             </div>
           ))}

@@ -1,21 +1,16 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
-import BitcoinIcon from "@/components/icons/BitcoinIcon";
+import { useWallet } from "@/contexts/WalletContext";
+import Logo from "@/components/ui/Logo";
 
 export const Hero = () => {
+  const { isConnected, connectWallet } = useWallet();
+
   return (
     <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
       {/* Background gradient */}
       <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent" />
-      
-      {/* Floating Bitcoin icons */}
-      <div className="absolute top-20 left-[10%] opacity-10 animate-pulse">
-        <BitcoinIcon size={64} className="text-primary" />
-      </div>
-      <div className="absolute bottom-32 right-[15%] opacity-10 animate-pulse delay-500">
-        <BitcoinIcon size={48} className="text-primary" />
-      </div>
       
       <div className="container relative z-10 px-4 py-20">
         <div className="max-w-4xl mx-auto text-center">
@@ -26,7 +21,7 @@ export const Hero = () => {
           </div>
           
           {/* Main headline */}
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6">
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold font-display tracking-tight mb-6">
             Accept Bitcoin payments.{" "}
             <span className="text-gradient-orange">Keep your keys.</span>
           </h1>
@@ -39,16 +34,27 @@ export const Hero = () => {
           
           {/* CTAs */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button 
-              size="lg" 
-              className="glow-orange text-lg px-8 py-6 font-semibold"
-              asChild
-            >
-              <Link to="/dashboard">
+            {isConnected ? (
+              <Button 
+                size="lg" 
+                className="text-lg px-8 py-6 font-semibold"
+                asChild
+              >
+                <Link to="/dashboard">
+                  Go to Dashboard
+                  <ArrowRight className="ml-2 w-5 h-5" />
+                </Link>
+              </Button>
+            ) : (
+              <Button 
+                size="lg" 
+                className="text-lg px-8 py-6 font-semibold"
+                onClick={connectWallet}
+              >
                 Connect Wallet
                 <ArrowRight className="ml-2 w-5 h-5" />
-              </Link>
-            </Button>
+              </Button>
+            )}
             
             <Button 
               variant="outline" 
