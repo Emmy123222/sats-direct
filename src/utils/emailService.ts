@@ -8,8 +8,9 @@ export interface EmailTemplate {
 }
 
 export interface EmailConfig {
-  provider: 'resend' | 'sendgrid' | 'mailgun' | 'ses' | 'postmark' | 'custom';
+  provider: 'formspree' | 'resend' | 'sendgrid' | 'mailgun' | 'ses' | 'postmark' | 'custom';
   apiKey?: string;
+  formspreeEndpoint?: string;
   fromEmail: string;
   fromName: string;
   region?: string; // For AWS SES
@@ -17,10 +18,10 @@ export interface EmailConfig {
 
 export class EmailService {
   private static config: EmailConfig = {
-    provider: 'resend', // Default to Resend (modern, developer-friendly)
-    apiKey: import.meta.env.VITE_RESEND_API_KEY,
+    provider: 'formspree', // Default to Formspree (simplest setup)
+    formspreeEndpoint: 'https://formspree.io/f/mdkekqwg',
     fromEmail: import.meta.env.VITE_FROM_EMAIL || 'hello@satsgate.com',
-    fromName: import.meta.env.VITE_FROM_NAME || 'SatsGate Team'
+    fromName: import.meta.env.VITE_FROM_NAME || 'Emmanuel Ogheneovo'
   };
 
   /**
@@ -31,6 +32,8 @@ export class EmailService {
     
     try {
       switch (this.config.provider) {
+        case 'formspree':
+          return await this.sendViaFormspree(email, template);
         case 'resend':
           return await this.sendViaResend(email, template);
         case 'sendgrid':
@@ -53,6 +56,37 @@ export class EmailService {
         message: error instanceof Error ? error.message : 'Failed to send email' 
       };
     }
+  }
+
+  /**
+   * Send via Formspree (Simplest setup - no API keys needed!)
+   */
+  private static async sendViaFormspree(email: string, template: EmailTemplate): Promise<{ success: boolean; message: string }> {
+    const endpoint = this.config.formspreeEndpoint || 'https://formspree.io/f/mdkekqwg';
+
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: email,
+        subject: template.subject,
+        message: template.textContent,
+        _replyto: email,
+        _subject: template.subject,
+        'User Email': email,
+        'Signup Date': new Date().toLocaleDateString(),
+        'Message': template.textContent,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Formspree error: ${error}`);
+    }
+
+    return { success: true, message: 'Welcome email sent successfully!' };
   }
 
   /**
@@ -273,7 +307,7 @@ export class EmailService {
    * Generate welcome email template
    */
   private static getWelcomeEmailTemplate(data: any = {}): EmailTemplate {
-    const subject = '🚀 Welcome to SatsGate - You\'re on the list!';
+    const subject = 'Thanks for joining the SatsGate waitlist!';
     
     const htmlContent = `
 <!DOCTYPE html>
@@ -289,105 +323,94 @@ export class EmailService {
         .logo { font-size: 28px; font-weight: bold; margin-bottom: 10px; color: #F7931A; }
         .content { padding: 40px 30px; }
         .highlight { background: #F7931A; color: white; padding: 2px 8px; border-radius: 4px; font-weight: bold; }
-        .cta-button { display: inline-block; background: #F7931A; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 20px 0; }
         .footer { background: #f8f9fa; padding: 30px; text-align: center; color: #666; font-size: 14px; }
-        .social-links { margin: 20px 0; }
-        .social-links a { color: #F7931A; text-decoration: none; margin: 0 10px; }
+        .signature { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; }
+        ul { padding-left: 20px; }
+        li { margin-bottom: 8px; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
             <div class="logo">⚡ SatsGate</div>
-            <h1>Welcome to the Future of Bitcoin Payments!</h1>
+            <h1>Thanks for joining our waitlist!</h1>
         </div>
         
         <div class="content">
-            <h2>🎉 You're officially on the waitlist!</h2>
+            <p>Hi there,</p>
             
-            <p>Thank you for joining the SatsGate early access program. You're now part of an exclusive group of forward-thinking individuals who believe in the power of <span class="highlight">self-custodial Bitcoin payments</span>.</p>
+            <p>Thanks for joining the SatsGate waitlist — we're excited to have you early.</p>
             
-            <h3>What's SatsGate?</h3>
-            <p>SatsGate is the simplest way for merchants to accept Bitcoin payments directly to their wallets. No middlemen, no KYC, no chargebacks - just pure Bitcoin.</p>
+            <p>SatsGate is a <span class="highlight">non-custodial Bitcoin payment gateway</span> built on Stacks, designed to help small businesses and freelancers accept BTC easily, with full control of their funds and no centralized processors.</p>
             
+            <p>You're receiving this email because you signed up for early access.</p>
+            
+            <p><strong>Here's what happens next:</strong></p>
             <ul>
-                <li>✅ <strong>Self-Custody:</strong> Your keys, your coins</li>
-                <li>✅ <strong>No KYC:</strong> Start accepting payments in minutes</li>
-                <li>✅ <strong>Instant Settlement:</strong> Bitcoin transactions confirm on-chain</li>
-                <li>✅ <strong>No Chargebacks:</strong> Final payments, no disputes</li>
+                <li>We're currently building the MVP</li>
+                <li>Early users will get first access to test payments</li>
+                <li>You'll receive updates as features roll out</li>
+                <li>Your feedback will help shape the product</li>
             </ul>
             
-            <h3>What happens next?</h3>
-            <p>We're putting the finishing touches on SatsGate and will be launching soon. As a waitlist member, you'll be among the first to:</p>
-            
+            <p>If you'd like to help us build something truly useful, feel free to reply and tell us:</p>
             <ul>
-                <li>🚀 Get early access to the platform</li>
-                <li>📧 Receive launch notifications</li>
-                <li>🎁 Enjoy special early-adopter benefits</li>
-                <li>💬 Provide feedback that shapes the product</li>
+                <li>What kind of business you run</li>
+                <li>How you currently accept payments</li>
+                <li>What you'd love to see in a Bitcoin checkout</li>
             </ul>
             
-            <div style="text-align: center; margin: 30px 0;">
-                <a href="https://satsgate.com/dashboard" class="cta-button">Explore the Dashboard</a>
+            <p>Thanks for being part of the journey.</p>
+            
+            <p><strong>Let's build the future of Bitcoin payments — together.</strong></p>
+            
+            <div class="signature">
+                <p>Best,<br>
+                <strong>Emmanuel Ogheneovo</strong><br>
+                Founder, SatsGate</p>
             </div>
-            
-            <p>In the meantime, feel free to connect your wallet and explore our demo dashboard. It's fully functional and gives you a preview of what's coming!</p>
-            
-            <p>Questions? Just reply to this email - we read every message.</p>
-            
-            <p>Stay sovereign,<br>
-            <strong>The SatsGate Team</strong></p>
         </div>
         
         <div class="footer">
-            <div class="social-links">
-                <a href="https://twitter.com/satsgate">Twitter</a> |
-                <a href="https://github.com/satsgate">GitHub</a> |
-                <a href="https://satsgate.com">Website</a>
-            </div>
-            
             <p>Built on Bitcoin. Powered by Stacks.</p>
             <p style="font-size: 12px; color: #999;">
-                You received this email because you joined our waitlist at satsgate.com<br>
-                <a href="#" style="color: #999;">Unsubscribe</a> | <a href="#" style="color: #999;">Update preferences</a>
+                You received this email because you joined our waitlist at satsgate.com
             </p>
         </div>
     </div>
 </body>
 </html>`;
 
-    const textContent = `
-🚀 Welcome to SatsGate - You're on the list!
+    const textContent = `Hi there,
 
-Thank you for joining the SatsGate early access program! You're now part of an exclusive group of forward-thinking individuals who believe in the power of self-custodial Bitcoin payments.
+Thanks for joining the SatsGate waitlist — we're excited to have you early.
 
-What's SatsGate?
-SatsGate is the simplest way for merchants to accept Bitcoin payments directly to their wallets. No middlemen, no KYC, no chargebacks - just pure Bitcoin.
+SatsGate is a non-custodial Bitcoin payment gateway built on Stacks, designed to help small businesses and freelancers accept BTC easily, with full control of their funds and no centralized processors.
 
-✅ Self-Custody: Your keys, your coins
-✅ No KYC: Start accepting payments in minutes  
-✅ Instant Settlement: Bitcoin transactions confirm on-chain
-✅ No Chargebacks: Final payments, no disputes
+You're receiving this email because you signed up for early access.
 
-What happens next?
-We're putting the finishing touches on SatsGate and will be launching soon. As a waitlist member, you'll be among the first to:
+Here's what happens next:
+• We're currently building the MVP 
+• Early users will get first access to test payments 
+• You'll receive updates as features roll out 
+• Your feedback will help shape the product
 
-🚀 Get early access to the platform
-📧 Receive launch notifications
-🎁 Enjoy special early-adopter benefits
-💬 Provide feedback that shapes the product
+If you'd like to help us build something truly useful, feel free to reply and tell us:
+– What kind of business you run 
+– How you currently accept payments 
+– What you'd love to see in a Bitcoin checkout
 
-In the meantime, feel free to connect your wallet and explore our demo dashboard at https://satsgate.com/dashboard
+Thanks for being part of the journey.
 
-Questions? Just reply to this email - we read every message.
+Let's build the future of Bitcoin payments — together.
 
-Stay sovereign,
-The SatsGate Team
+Best, 
+Emmanuel Ogheneovo 
+Founder, SatsGate
 
 ---
 Built on Bitcoin. Powered by Stacks.
-You received this email because you joined our waitlist at satsgate.com
-`;
+You received this email because you joined our waitlist at satsgate.com`;
 
     return { subject, htmlContent, textContent };
   }
