@@ -57,7 +57,7 @@ export class WaitlistService {
         // Also store locally as backup
         await this.storeLocally(entry);
         
-        // Send welcome email
+        // Send welcome email to user + notification to creator
         try {
           const emailResult = await EmailService.sendWelcomeEmail(entry.email, {
             source: entry.source,
@@ -76,7 +76,7 @@ export class WaitlistService {
         // Store locally only
         await this.storeLocally(entry);
         
-        // Send welcome email
+        // Send welcome email to user + notification to creator
         try {
           const emailResult = await EmailService.sendWelcomeEmail(entry.email, {
             source: entry.source,
@@ -86,12 +86,12 @@ export class WaitlistService {
           if (emailResult.success) {
             // Send to analytics if available
             this.trackWaitlistSignup(entry);
-            return { success: true, message: 'Welcome to the waitlist! Check your email for confirmation.' };
+            return { success: true, message: emailResult.message };
           } else {
             console.warn('Welcome email failed:', emailResult.message);
             // Still consider signup successful even if email fails
             this.trackWaitlistSignup(entry);
-            return { success: true, message: 'Welcome to the waitlist!' };
+            return { success: true, message: 'Welcome to the waitlist! (Email delivery may be delayed)' };
           }
         } catch (emailError) {
           console.warn('Welcome email error:', emailError);
@@ -131,22 +131,22 @@ export class WaitlistService {
       }
       
       // Check local storage
-      const localEntries = this.getLocalEntries();
+      const localEntries = this.getLocalEntriesPrivate();
       return localEntries.some(entry => entry.email === normalizedEmail);
     } catch (error) {
       console.error('Error checking waitlist:', error);
       
       // Fallback to local check only
-      const localEntries = this.getLocalEntries();
+      const localEntries = this.getLocalEntriesPrivate();
       return localEntries.some(entry => entry.email === normalizedEmail);
     }
   }
 
   /**
-   * Get waitlist statistics
+   * Get waitlist statistics (for display purposes)
    */
   static getWaitlistStats(): { total: number; today: number; thisWeek: number } {
-    const entries = this.getLocalEntries();
+    const entries = this.getLocalEntriesPrivate();
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -156,13 +156,6 @@ export class WaitlistService {
       today: entries.filter(entry => new Date(entry.timestamp) >= today).length,
       thisWeek: entries.filter(entry => new Date(entry.timestamp) >= weekAgo).length
     };
-  }
-
-  /**
-   * Export waitlist data (for admin use)
-   */
-  static exportWaitlist(): WaitlistEntry[] {
-    return this.getLocalEntries();
   }
 
   /**
@@ -178,7 +171,7 @@ export class WaitlistService {
    */
   private static async storeLocally(entry: WaitlistEntry): Promise<void> {
     try {
-      const existingEntries = this.getLocalEntries();
+      const existingEntries = this.getLocalEntriesPrivate();
       existingEntries.push(entry);
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(existingEntries));
     } catch (error) {
@@ -187,9 +180,9 @@ export class WaitlistService {
   }
 
   /**
-   * Get local entries
+   * Get local entries (public method)
    */
-  private static getLocalEntries(): WaitlistEntry[] {
+  static getLocalEntries(): WaitlistEntry[] {
     try {
       const stored = localStorage.getItem(this.STORAGE_KEY);
       return stored ? JSON.parse(stored) : [];
@@ -197,6 +190,13 @@ export class WaitlistService {
       console.error('Error reading local waitlist:', error);
       return [];
     }
+  }
+
+  /**
+   * Get local entries (private method for internal use)
+   */
+  private static getLocalEntriesPrivate(): WaitlistEntry[] {
+    return this.getLocalEntries();
   }
 
   /**
@@ -238,7 +238,7 @@ export class NewsletterService {
     // For now, we'll add to waitlist with newsletter flag
     
     try {
-      const existingEntries = WaitlistService.exportWaitlist();
+      const existingEntries = WaitlistService.getLocalEntries();
       const entry: WaitlistEntry = {
         email: email.toLowerCase().trim(),
         timestamp: new Date().toISOString(),

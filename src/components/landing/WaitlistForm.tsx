@@ -2,14 +2,13 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { CheckCircle, Mail, Users } from "lucide-react";
+import { CheckCircle, Mail } from "lucide-react";
 import { WaitlistService } from "@/utils/waitlistService";
 
 export const WaitlistForm = () => {
   const [email, setEmail] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [waitlistStats, setWaitlistStats] = useState(WaitlistService.getWaitlistStats());
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,7 +25,6 @@ export const WaitlistForm = () => {
       
       if (result.success) {
         setIsSubmitted(true);
-        setWaitlistStats(WaitlistService.getWaitlistStats());
         toast.success(result.message);
         
         // Clear form
@@ -57,17 +55,9 @@ export const WaitlistForm = () => {
             </div>
             <h2 className="text-3xl font-bold font-display mb-4">You're on the list!</h2>
             <p className="text-muted-foreground mb-6">
-              Welcome to the SatsGate waitlist! We'll notify you as soon as we launch. 
-              In the meantime, you can connect your wallet to explore the dashboard.
+              Welcome to the SatsGate waitlist! Check your email for a welcome message from Emmanuel. 
+              You'll be among the first to know when we launch.
             </p>
-            
-            {/* Waitlist Stats */}
-            <div className="bg-secondary/50 rounded-lg p-4 mb-6">
-              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                <Users className="w-4 h-4" />
-                <span>You're one of {waitlistStats.total} early adopters!</span>
-              </div>
-            </div>
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Button variant="outline" onClick={handleTryAgain}>
@@ -101,26 +91,13 @@ export const WaitlistForm = () => {
             We're building the future of Bitcoin payments.
           </p>
           
-          {/* Waitlist Stats */}
-          {waitlistStats.total > 0 && (
-            <div className="bg-secondary/50 rounded-lg p-4 mb-6">
-              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                <Users className="w-4 h-4" />
-                <span>{waitlistStats.total} people already joined</span>
-                {waitlistStats.today > 0 && (
-                  <span className="text-primary">• {waitlistStats.today} today</span>
-                )}
-              </div>
-            </div>
-          )}
-          
           <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
             <Input
               type="email"
               placeholder="satoshi@bitcoin.org"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="flex-1 h-12 bg-secondary border-border"
+              className="flex-1 h-12 bg-white border-border text-black placeholder:text-gray-500"
               disabled={isLoading}
               required
             />
