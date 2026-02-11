@@ -1,6 +1,9 @@
 {
   "functions": {
-    "api/send-email.js": {
+    "api/waitlist.js": {
+      "maxDuration": 10
+    },
+    "api/send-waitlist-announcement.js": {
       "maxDuration": 10
     }
   }
