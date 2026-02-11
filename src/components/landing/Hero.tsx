@@ -17,19 +17,19 @@ export const Hero = () => {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/30 bg-primary/5 mb-8">
             <Zap className="w-4 h-4 text-primary" />
-            <span className="text-sm text-muted-foreground">Non-custodial Bitcoin payments</span>
+            <span className="text-sm text-muted-foreground">Bitcoin-Secured Escrow on Stacks</span>
           </div>
           
           {/* Main headline */}
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold font-display tracking-tight mb-6">
-            Accept Bitcoin payments.{" "}
-            <span className="text-gradient-orange">Keep your keys.</span>
+            Get Paid Safely.{" "}
+            <span className="text-gradient-orange">No Chargebacks.</span>
           </h1>
           
           {/* Subheadline */}
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10">
-            The simplest way to accept BTC payments directly to your wallet. 
-            No middlemen. No KYC. No chargebacks. Just Bitcoin.
+            Bitcoin-secured escrow for freelancers and creators. Lock funds in smart contracts, 
+            release on delivery. No custody, no middlemen, no fraud.
           </p>
           
           {/* CTAs */}
@@ -41,7 +41,7 @@ export const Hero = () => {
                 asChild
               >
                 <Link to="/dashboard">
-                  Go to Dashboard
+                  Create Escrow
                   <ArrowRight className="ml-2 w-5 h-5" />
                 </Link>
               </Button>
@@ -66,6 +66,22 @@ export const Hero = () => {
             >
               Join Waitlist
             </Button>
+          </div>
+
+          {/* Trust indicators */}
+          <div className="mt-12 flex flex-wrap items-center justify-center gap-8 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-green-500" />
+              <span>Bitcoin-Secured</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-blue-500" />
+              <span>Non-Custodial</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-orange-500" />
+              <span>No Chargebacks</span>
+            </div>
           </div>
         </div>
       </div>

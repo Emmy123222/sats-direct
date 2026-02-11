@@ -1,0 +1,18 @@
+[project]
+name = "sats-direct"
+description = "SatsGate - Bitcoin escrow on Stacks"
+authors = []
+telemetry = false
+cache_dir = "./.cache"
+requirements = []
+boot_contracts = []
+
+[contracts.escrow]
+path = "contracts/escrow.clar"
+clarity_version = 2
+epoch = 2.5
+
+[contracts.invoice-registry]
+path = "contracts/invoice-registry.clar"
+clarity_version = 2
+epoch = 2.5

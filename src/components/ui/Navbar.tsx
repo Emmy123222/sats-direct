@@ -1,13 +1,17 @@
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Wallet, Menu, X } from "lucide-react";
 import { useWallet } from "@/contexts/WalletContext";
 import { useState } from "react";
 import Logo from "@/components/ui/Logo";
 
 const Navbar = () => {
-  const { isConnected, connectWallet, disconnectWallet, btcAddress } = useWallet();
+  const { isConnected, connectWallet, disconnectWallet, stxAddress } = useWallet();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const location = useLocation();
+  
+  // Only show Home and Waitlist on landing page
+  const isLandingPage = location.pathname === '/';
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -25,12 +29,26 @@ const Navbar = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-6">
-            <Link 
-              to="/" 
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Home
-            </Link>
+            {isLandingPage && (
+              <>
+                <Link 
+                  to="/" 
+                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Home
+                </Link>
+                <a 
+                  href="#waitlist" 
+                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    document.getElementById('waitlist')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                >
+                  Waitlist
+                </a>
+              </>
+            )}
             {isConnected && (
               <Link 
                 to="/dashboard" 
@@ -39,16 +57,6 @@ const Navbar = () => {
                 Dashboard
               </Link>
             )}
-            <a 
-              href="#waitlist" 
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-              onClick={(e) => {
-                e.preventDefault();
-                document.getElementById('waitlist')?.scrollIntoView({ behavior: 'smooth' });
-              }}
-            >
-              Waitlist
-            </a>
           </div>
 
           {/* Desktop Wallet Connection */}
@@ -57,7 +65,7 @@ const Navbar = () => {
               <div className="flex items-center gap-3">
                 <div className="text-sm text-muted-foreground">
                   <div className="font-mono text-xs">
-                    {btcAddress ? `${btcAddress.slice(0, 6)}...${btcAddress.slice(-4)}` : 'Loading...'}
+                    {stxAddress ? `${stxAddress.slice(0, 6)}...${stxAddress.slice(-4)}` : 'Loading...'}
                   </div>
                 </div>
                 <Button variant="outline" size="sm" onClick={disconnectWallet}>
@@ -91,13 +99,28 @@ const Navbar = () => {
         {isMobileMenuOpen && (
           <div className="md:hidden mt-4 pb-4 border-t border-border">
             <div className="flex flex-col gap-4 pt-4">
-              <Link 
-                to="/" 
-                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Home
-              </Link>
+              {isLandingPage && (
+                <>
+                  <Link 
+                    to="/" 
+                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Home
+                  </Link>
+                  <a 
+                    href="#waitlist" 
+                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      document.getElementById('waitlist')?.scrollIntoView({ behavior: 'smooth' });
+                      setIsMobileMenuOpen(false);
+                    }}
+                  >
+                    Waitlist
+                  </a>
+                </>
+              )}
               {isConnected && (
                 <Link 
                   to="/dashboard" 
@@ -107,17 +130,6 @@ const Navbar = () => {
                   Dashboard
                 </Link>
               )}
-              <a 
-                href="#waitlist" 
-                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                onClick={(e) => {
-                  e.preventDefault();
-                  document.getElementById('waitlist')?.scrollIntoView({ behavior: 'smooth' });
-                  setIsMobileMenuOpen(false);
-                }}
-              >
-                Waitlist
-              </a>
               
               {/* Mobile Wallet Connection */}
               <div className="pt-2 border-t border-border">
@@ -125,7 +137,7 @@ const Navbar = () => {
                   <div className="flex flex-col gap-3">
                     <div className="text-sm text-muted-foreground">
                       <div className="font-mono text-xs">
-                        {btcAddress ? `${btcAddress.slice(0, 8)}...${btcAddress.slice(-8)}` : 'Loading...'}
+                        {stxAddress ? `${stxAddress.slice(0, 8)}...${stxAddress.slice(-8)}` : 'Loading...'}
                       </div>
                     </div>
                     <Button variant="outline" size="sm" onClick={disconnectWallet}>

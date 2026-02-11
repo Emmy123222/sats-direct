@@ -1,7 +1,5 @@
-import { EmailService } from './emailService';
-
 // Waitlist service for managing email subscriptions
-// This can be easily extended to use a real backend API
+// Emails are handled entirely by the backend API
 
 export interface WaitlistEntry {
   email: string;
@@ -16,7 +14,7 @@ export class WaitlistService {
   private static readonly API_ENDPOINT = import.meta.env.VITE_WAITLIST_API || null;
 
   /**
-   * Add email to waitlist
+   * Add email to waitlist - simplified to use backend only
    */
   static async addToWaitlist(email: string): Promise<{ success: boolean; message: string }> {
     // Validate email
@@ -38,75 +36,66 @@ export class WaitlistService {
     };
 
     try {
-      // If API endpoint is configured, send to backend
-      if (this.API_ENDPOINT) {
-        const response = await fetch(this.API_ENDPOINT, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(entry),
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to submit to waitlist');
-        }
-
-        const result = await response.json();
-        
-        // Also store locally as backup
-        await this.storeLocally(entry);
-        
-        // Send welcome email to user + notification to creator
-        try {
-          const emailResult = await EmailService.sendWelcomeEmail(entry.email, {
+      // Store locally first
+      await this.storeLocally(entry);
+      
+      // Send to backend API (no email services)
+      const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const waitlistApiUrl = isDevelopment ? 'http://localhost:3001/api/waitlist' : '/api/waitlist';
+      
+      console.log('📝 Submitting to waitlist backend...');
+      
+      const backendResponse = await fetch(waitlistApiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: entry.email,
+          additionalData: {
             source: entry.source,
-            signupDate: new Date(entry.timestamp).toLocaleDateString()
-          });
-          
-          if (!emailResult.success) {
-            console.warn('Welcome email failed:', emailResult.message);
+            signupDate: new Date(entry.timestamp).toLocaleDateString(),
+            timestamp: entry.timestamp,
+            userAgent: entry.userAgent,
+            referrer: entry.referrer
           }
-        } catch (emailError) {
-          console.warn('Welcome email error:', emailError);
-        }
+        })
+      });
+
+      if (backendResponse.ok) {
+        const result = await backendResponse.json();
+        console.log('✅ Waitlist signup successful:', result);
         
-        return { success: true, message: result.message || 'Welcome to the waitlist!' };
+        // Send to analytics if available
+        this.trackWaitlistSignup(entry);
+        
+        return { 
+          success: true, 
+          message: result.message || 'Welcome to the waitlist! We\'ll be in touch soon.' 
+        };
       } else {
-        // Store locally only
-        await this.storeLocally(entry);
+        const error = await backendResponse.json();
+        console.warn('Backend API error:', error);
         
-        // Send welcome email to user + notification to creator
-        try {
-          const emailResult = await EmailService.sendWelcomeEmail(entry.email, {
-            source: entry.source,
-            signupDate: new Date(entry.timestamp).toLocaleDateString()
-          });
-          
-          if (emailResult.success) {
-            // Send to analytics if available
-            this.trackWaitlistSignup(entry);
-            return { success: true, message: emailResult.message };
-          } else {
-            console.warn('Welcome email failed:', emailResult.message);
-            // Still consider signup successful even if email fails
-            this.trackWaitlistSignup(entry);
-            return { success: true, message: 'Welcome to the waitlist! (Email delivery may be delayed)' };
-          }
-        } catch (emailError) {
-          console.warn('Welcome email error:', emailError);
-          // Still consider signup successful even if email fails
-          this.trackWaitlistSignup(entry);
-          return { success: true, message: 'Welcome to the waitlist!' };
-        }
+        // Still consider signup successful and store locally
+        this.trackWaitlistSignup(entry);
+        return { 
+          success: true, 
+          message: 'Welcome to the waitlist! We\'ll be in touch soon.' 
+        };
       }
+      
     } catch (error) {
       console.error('Error adding to waitlist:', error);
       
-      // Fallback to local storage
+      // Fallback to local storage only
       try {
         await this.storeLocally(entry);
-        return { success: true, message: 'Welcome to the waitlist!' };
+        this.trackWaitlistSignup(entry);
+        return { 
+          success: true, 
+          message: 'Welcome to the waitlist! We\'ll be in touch soon.' 
+        };
       } catch (localError) {
         console.error('Local storage failed:', localError);
         return { success: false, message: 'Something went wrong. Please try again.' };

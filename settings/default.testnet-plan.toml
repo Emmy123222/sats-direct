@@ -1,0 +1,12 @@
+[plan]
+id = 0
+name = "SatsGate Testnet Deployment"
+
+[[plan.batches]]
+id = 0
+
+[[plan.batches.transactions]]
+requirement = { emulated-contract-publish = { contract-name = "escrow", path = "contracts/escrow.clar", clarity-version = 2 } }
+
+[[plan.batches.transactions]]
+requirement = { emulated-contract-publish = { contract-name = "invoice-registry", path = "contracts/invoice-registry.clar", clarity-version = 2 } }

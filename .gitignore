@@ -12,6 +12,12 @@ dist
 dist-ssr
 *.local
 
+# Environment variables - NEVER commit these!
+.env
+.env.local
+.env.production
+.env.development
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -25,3 +31,8 @@ dist-ssr
 
 # Local Netlify folder
 .netlify
+
+# Sensitive data
+waitlist-entries.json
+*.key
+*.pem

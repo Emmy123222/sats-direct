@@ -1,122 +1,205 @@
-import { 
-  makeContractCall,
-  makeContractDeploy,
-  broadcastTransaction,
-  AnchorMode,
-  PostConditionMode,
-  stringAsciiCV,
-  stringUtf8CV,
+import { openContractCall } from '@stacks/connect';
+import { STACKS_TESTNET, STACKS_MAINNET } from '@stacks/network';
+import {
   uintCV,
-  fetchCallReadOnlyFunction,
-  cvToJSON
+  stringUtf8CV,
+  someCV,
+  noneCV,
+  standardPrincipalCV,
+  PostConditionMode,
 } from '@stacks/transactions';
-import { STACKS_TESTNET } from '@stacks/network';
-import { UserSession } from '@stacks/connect';
 
-// Use testnet for development
-const network = STACKS_TESTNET;
+const CONTRACT_ADDRESS = import.meta.env.VITE_ESCROW_CONTRACT_ADDRESS || 'ST3XJC356F2NYYBT4JBEYW5KWYHVRHEZ1YDZG65KT.escrow';
+const NETWORK = import.meta.env.VITE_STACKS_NETWORK || 'testnet';
 
-// Contract details (update these when deployed)
-const CONTRACT_ADDRESS = 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM'; // Replace with actual address
-const CONTRACT_NAME = 'invoice-registry';
+const getNetwork = () => {
+  return NETWORK === 'mainnet' ? STACKS_MAINNET : STACKS_TESTNET;
+};
 
-export interface InvoiceData {
-  id: string;
-  amount: number;
-  memo: string;
-  btcAddress: string;
-  merchant: string;
-  createdAt: number;
-  status: string;
-}
+const [contractAddress, contractName] = CONTRACT_ADDRESS.split('.');
 
-export class ContractInteraction {
-  private userSession: UserSession;
+/**
+ * Create a new escrow
+ */
+export async function createEscrow(
+  amount: number, // in microSTX
+  deadline: number, // block height
+  description: string,
+  buyerAddress?: string
+) {
+  const functionArgs = [
+    uintCV(amount),
+    uintCV(deadline),
+    stringUtf8CV(description),
+    buyerAddress ? someCV(standardPrincipalCV(buyerAddress)) : noneCV(),
+  ];
 
-  constructor(userSession: UserSession) {
-    this.userSession = userSession;
-  }
+  const options = {
+    network: getNetwork(),
+    anchorMode: 1,
+    contractAddress,
+    contractName,
+    functionName: 'create-escrow',
+    functionArgs,
+    postConditionMode: PostConditionMode.Allow,
+    onFinish: (data: any) => {
+      console.log('Escrow created:', data);
+      return data;
+    },
+    onCancel: () => {
+      console.log('Transaction cancelled');
+    },
+  };
 
-  /**
-   * Register a new invoice on the blockchain
-   */
-  async registerInvoice(
-    invoiceId: string,
-    amount: number,
-    memo: string,
-    btcAddress: string
-  ): Promise<string> {
-    if (!this.userSession.isUserSignedIn()) {
-      throw new Error('User must be signed in to register invoice');
-    }
-
-    // For MVP, we'll simulate contract interaction
-    // In production, this would use actual contract deployment
-    console.log('Registering invoice on blockchain:', {
-      invoiceId,
-      amount,
-      memo,
-      btcAddress
-    });
-    
-    // Return a mock transaction ID
-    return `0x${Math.random().toString(16).substr(2, 64)}`;
-  }
-
-  /**
-   * Update invoice status on the blockchain
-   */
-  async updateInvoiceStatus(invoiceId: string, status: string): Promise<string> {
-    if (!this.userSession.isUserSignedIn()) {
-      throw new Error('User must be signed in to update invoice');
-    }
-
-    console.log('Updating invoice status on blockchain:', { invoiceId, status });
-    
-    // Return a mock transaction ID
-    return `0x${Math.random().toString(16).substr(2, 64)}`;
-  }
-
-  /**
-   * Get invoice details from the blockchain
-   */
-  async getInvoice(invoiceId: string): Promise<InvoiceData | null> {
-    try {
-      // For MVP, return null (use localStorage instead)
-      // In production, this would query the actual contract
-      console.log('Querying invoice from blockchain:', invoiceId);
-      return null;
-    } catch (error) {
-      console.error('Error fetching invoice from contract:', error);
-      return null;
-    }
-  }
-
-  /**
-   * Check if invoice exists on the blockchain
-   */
-  async invoiceExists(invoiceId: string): Promise<boolean> {
-    try {
-      console.log('Checking invoice existence on blockchain:', invoiceId);
-      return false; // For MVP, always return false
-    } catch (error) {
-      console.error('Error checking invoice existence:', error);
-      return false;
-    }
-  }
+  return await openContractCall(options);
 }
 
 /**
- * Deploy the invoice registry contract
- * This would typically be done once during setup
+ * Deposit funds into escrow (buyer)
+ * Note: Uses Allow mode because the contract handles the STX transfer internally
  */
-export async function deployContract(userSession: UserSession): Promise<string> {
-  if (!userSession.isUserSignedIn()) {
-    throw new Error('User must be signed in to deploy contract');
-  }
+export async function depositToEscrow(escrowId: number) {
+  const functionArgs = [uintCV(escrowId)];
 
-  console.log('Deploying contract (simulated for MVP)');
-  
-  // Return a mock transaction ID
-  return `0x${Math.random().toString(16).substr(2, 64)}`;
+  const options = {
+    network: getNetwork(),
+    anchorMode: 1,
+    contractAddress,
+    contractName,
+    functionName: 'deposit',
+    functionArgs,
+    postConditionMode: PostConditionMode.Allow, // Allow because contract does stx-transfer
+    onFinish: (data: any) => {
+      console.log('Deposit successful:', data);
+      return data;
+    },
+    onCancel: () => {
+      console.log('Transaction cancelled');
+      throw new Error('Transaction cancelled by user');
+    },
+  };
+
+  return await openContractCall(options);
+}
+
+/**
+ * Mark work as complete (seller)
+ */
+export async function markComplete(escrowId: number) {
+  const functionArgs = [uintCV(escrowId)];
+
+  const options = {
+    network: getNetwork(),
+    anchorMode: 1,
+    contractAddress,
+    contractName,
+    functionName: 'mark-complete',
+    functionArgs,
+    postConditionMode: PostConditionMode.Allow,
+    onFinish: (data: any) => {
+      console.log('Marked complete:', data);
+      return data;
+    },
+    onCancel: () => {
+      console.log('Transaction cancelled');
+    },
+  };
+
+  return await openContractCall(options);
+}
+
+/**
+ * Release funds to seller (buyer)
+ */
+export async function releaseFunds(escrowId: number) {
+  const functionArgs = [uintCV(escrowId)];
+
+  const options = {
+    network: getNetwork(),
+    anchorMode: 1,
+    contractAddress,
+    contractName,
+    functionName: 'release-funds',
+    functionArgs,
+    postConditionMode: PostConditionMode.Allow,
+    onFinish: (data: any) => {
+      console.log('Funds released:', data);
+      return data;
+    },
+    onCancel: () => {
+      console.log('Transaction cancelled');
+    },
+  };
+
+  return await openContractCall(options);
+}
+
+/**
+ * Cancel escrow (seller)
+ */
+export async function cancelEscrow(escrowId: number) {
+  const functionArgs = [uintCV(escrowId)];
+
+  const options = {
+    network: getNetwork(),
+    anchorMode: 1,
+    contractAddress,
+    contractName,
+    functionName: 'cancel-escrow',
+    functionArgs,
+    postConditionMode: PostConditionMode.Allow,
+    onFinish: (data: any) => {
+      console.log('Escrow cancelled:', data);
+      return data;
+    },
+    onCancel: () => {
+      console.log('Transaction cancelled');
+    },
+  };
+
+  return await openContractCall(options);
+}
+
+/**
+ * Get escrow details from contract
+ */
+export async function getEscrow(escrowId: number) {
+  try {
+    const apiUrl = NETWORK === 'mainnet' 
+      ? 'https://api.hiro.so' 
+      : 'https://api.testnet.hiro.so';
+    
+    // Format as Clarity uint: 0x01 (type) + 16 bytes (value in hex)
+    const valueHex = escrowId.toString(16).padStart(32, '0');
+    const clarityUint = `0x01${valueHex}`;
+    
+    console.log(`Fetching escrow #${escrowId} with argument: ${clarityUint}`);
+    
+    const response = await fetch(
+      `${apiUrl}/v2/contracts/call-read/${contractAddress}/${contractName}/get-escrow`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sender: contractAddress,
+          arguments: [clarityUint],
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`API Error: ${response.status} ${response.statusText}`, errorText);
+      throw new Error(`Failed to fetch escrow: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log('Escrow data received:', data);
+    return data;
+  } catch (error) {
+    console.error('Error fetching escrow:', error);
+    throw error;
+  }
 }

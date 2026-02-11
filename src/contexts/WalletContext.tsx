@@ -8,6 +8,7 @@ interface WalletContextType {
   userData: any;
   btcAddress: string;
   stxAddress: string;
+  address: string; // Alias for stxAddress
   connectWallet: () => void;
   disconnectWallet: () => void;
 }
@@ -48,8 +49,32 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const result = await connect();
       console.log('Connection result:', result);
       
-      // Check if user is now signed in
-      if (userSession.isUserSignedIn()) {
+      // Extract addresses from the result
+      if (result && result.addresses && Array.isArray(result.addresses)) {
+        // Find Stacks address (starts with 'S')
+        const stxAddr = result.addresses.find((addr: any) => 
+          addr.address && addr.address.startsWith('S')
+        );
+        
+        // Find Bitcoin address (payment purpose or doesn't start with 'S')
+        const btcAddr = result.addresses.find((addr: any) => 
+          addr.address && !addr.address.startsWith('S') && 
+          (addr.purpose === 'payment' || !addr.purpose)
+        );
+        
+        if (stxAddr) {
+          setStxAddress(stxAddr.address);
+        }
+        
+        if (btcAddr) {
+          setBtcAddress(btcAddr.address);
+        }
+        
+        setIsConnected(true);
+        setUserData(result);
+        toast.success('Wallet connected successfully!');
+      } else if (userSession.isUserSignedIn()) {
+        // Fallback to userSession if result doesn't have addresses
         const userData = userSession.loadUserData();
         setUserData(userData);
         setIsConnected(true);
@@ -59,7 +84,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
     } catch (error) {
       console.error('Error connecting wallet:', error);
-      toast.error('Failed to connect wallet. Please install Hiro or Leather wallet.');
+      toast.error('Failed to connect wallet. Please install Leather or Xverse wallet.');
     }
   };
 
@@ -80,6 +105,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         userData,
         btcAddress,
         stxAddress,
+        address: stxAddress, // Alias for convenience
         connectWallet,
         disconnectWallet,
       }}

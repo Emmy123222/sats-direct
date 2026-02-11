@@ -1,190 +1,171 @@
-# SatsGate - Bitcoin Payment Gateway
+# SatsGate - Bitcoin-Secured Escrow Platform
 
-A non-custodial Bitcoin payment gateway built on Stacks that enables merchants to accept BTC payments directly to their wallets.
+> **Get paid safely. No chargebacks. No middlemen.**
 
-## Features
+SatsGate is a Bitcoin-secured escrow and payment platform built on Stacks that enables freelancers, creators, and digital sellers to transact safely without chargebacks or centralized control.
 
-- **Self-Custodial**: Payments go directly to merchant wallets
-- **No KYC**: Start accepting payments immediately
-- **Stacks Integration**: Connect with Hiro/Leather wallets
-- **Invoice Management**: Create and track payment invoices
-- **QR Code Payments**: Easy mobile payments
-- **Real-time Monitoring**: Automatic payment detection via mempool.space
-- **Blockchain Registry**: Optional invoice metadata on Stacks blockchain
+## 📚 Documentation & Scripts
 
-## Tech Stack
+- **Documentation**: All `.md` files are in [`docs/`](./docs/) - [View Index](./docs/README.md)
+- **Scripts**: All utility scripts are in [`scripts/`](./scripts/) - [View Index](./scripts/README.md)
+- **Project Structure**: See [docs/PROJECT_ORGANIZATION.md](./docs/PROJECT_ORGANIZATION.md)
 
-- **Frontend**: React + TypeScript + Tailwind CSS
-- **Wallet**: @stacks/connect (Hiro/Leather support)
-- **Payments**: Bitcoin mainnet via mempool.space API
-- **Smart Contracts**: Clarity on Stacks blockchain
-- **Storage**: Browser localStorage (MVP)
+## 🎯 What Problem We're Solving
 
-## Getting Started
+Today's payment landscape is broken for digital workers:
+- ❌ Freelancers get scammed
+- ❌ Buyers fear paying upfront  
+- ❌ Payment processors charge high fees (3-5%)
+- ❌ Chargebacks hurt honest sellers
+- ❌ Cross-border payments are slow or restricted
+- ❌ No simple, Bitcoin-native escrow for everyday work
+
+## 💡 Our Solution
+
+SatsGate provides trustless escrow powered by Bitcoin and Stacks smart contracts.
+
+### For Sellers (Freelancers, Creators)
+1. ✅ Create payment links with escrow protection
+2. ✅ Set amount and delivery deadline
+3. ✅ Funds locked in smart contract until delivery
+4. ✅ No chargebacks - payments are final
+
+### For Buyers
+1. ✅ Pay using STX tokens
+2. ✅ Funds secured in trustless smart contract
+3. ✅ Release payment after delivery confirmation
+4. ✅ Full transparency on-chain
+
+### The Platform
+- 🔐 **Non-custodial** - you control your keys
+- ₿ **Bitcoin-secured** via Stacks Proof of Transfer
+- 📜 **Smart contract escrow** - trustless automation
+- 🔍 **Transparent** - all transactions on-chain
+- 🚫 **No middleman** - peer-to-peer escrow
+- ⭐ **Reputation system** - build trust over time
+
+## 🛠 Tech Stack
+
+- **Blockchain**: Stacks (Bitcoin Layer 2)
+- **Smart Contracts**: Clarity
+- **Frontend**: React + TypeScript + Vite
+- **Styling**: Tailwind CSS + shadcn/ui
+- **Wallet**: Leather/Xverse integration
+- **Payments**: STX tokens
+
+## 🚀 Quick Start
 
 ### Prerequisites
 
 - Node.js 18+
 - npm or yarn
-- Hiro or Leather wallet extension
+- Leather or Xverse wallet extension
 
 ### Installation
 
-1. Clone the repository:
 ```bash
-git clone <repository-url>
+# Clone the repository
+git clone https://github.com/yourusername/sats-direct.git
 cd sats-direct
-```
 
-2. Install dependencies:
-```bash
+# Install dependencies
 npm install
-```
 
-3. Start the development server:
-```bash
+# Start development server
 npm run dev
 ```
 
-4. Open http://localhost:8080 in your browser
+### Environment Setup
 
-### Usage
-
-1. **Connect Wallet**: Click "Connect Wallet" and authorize with Hiro/Leather
-2. **Create Invoice**: Enter amount and optional memo
-3. **Share Payment Link**: Copy the generated invoice URL
-4. **Monitor Payments**: Check payment status automatically
-
-## Project Structure
-
-```
-sats-direct/
-├── src/
-│   ├── components/        # React components
-│   │   ├── landing/       # Landing page components
-│   │   └── ui/           # Reusable UI components
-│   ├── contexts/         # React contexts
-│   │   └── WalletContext.tsx
-│   ├── pages/            # Page components
-│   │   ├── Landing.tsx
-│   │   ├── Dashboard.tsx
-│   │   └── InvoicePage.tsx
-│   └── utils/            # Utility functions
-│       ├── paymentMonitor.ts
-│       └── contractInteraction.ts
-├── contracts/            # Clarity smart contracts
-│   └── invoice-registry.clar
-└── .md/                 # Documentation
-    └── plan.md
-```
-
-## API Integration
-
-### Payment Monitoring
-
-The app uses mempool.space API to monitor Bitcoin transactions:
-
-- **Endpoint**: `https://mempool.space/api/address/{address}/txs`
-- **Purpose**: Check for incoming payments to merchant addresses
-- **Frequency**: Every 30 seconds for active invoices
-
-### Wallet Integration
-
-Stacks wallet integration via @stacks/connect:
-
-- **Supported Wallets**: Hiro, Leather
-- **Network**: Bitcoin mainnet, Stacks mainnet/testnet
-- **Permissions**: Read addresses, sign transactions
-
-## Smart Contract
-
-The invoice registry contract (`contracts/invoice-registry.clar`) provides:
-
-- **Invoice Registration**: Store invoice metadata on-chain
-- **Status Updates**: Update payment status
-- **Public Verification**: Anyone can verify invoice details
-- **Merchant Control**: Only merchants can update their invoices
-
-### Contract Functions
-
-- `register-invoice`: Create new invoice record
-- `update-invoice-status`: Mark invoice as paid
-- `get-invoice`: Retrieve invoice details
-- `invoice-exists`: Check if invoice exists
-
-## Development
-
-### Available Scripts
-
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run lint` - Run ESLint
-- `npm run test` - Run tests
-
-### Environment Variables
-
-Create `.env.local` for local development:
+Create a `.env` file:
 
 ```env
-VITE_NETWORK=testnet
-VITE_CONTRACT_ADDRESS=your-contract-address
+# Deployed Smart Contracts
+VITE_ESCROW_CONTRACT_ADDRESS=ST3XJC356F2NYYBT4JBEYW5KWYHVRHEZ1YDZG65KT.escrow
+VITE_INVOICE_CONTRACT_ADDRESS=ST3XJC356F2NYYBT4JBEYW5KWYHVRHEZ1YDZG65KT.invoice-registry
+VITE_STACKS_NETWORK=testnet
 ```
 
-## Deployment
+## 📝 Smart Contracts
 
-### Frontend Deployment
+### Escrow Contract (`escrow.clar`)
+Handles the core escrow logic:
+- Create escrow with amount and deadline
+- Deposit funds (buyer)
+- Mark work complete (seller)
+- Release funds (buyer)
+- Cancel/refund logic
 
-1. Build the application:
-```bash
-npm run build
-```
+### Invoice Registry (`invoice-registry.clar`)
+Tracks invoice metadata on-chain:
+- Register invoices
+- Update status
+- Query invoice details
 
-2. Deploy the `dist` folder to your hosting provider (Vercel, Netlify, etc.)
+## 🎮 How It Works
 
-### Smart Contract Deployment
+1. **Seller creates escrow**
+   - Sets amount, deadline, and description
+   - Gets shareable payment link
 
-1. Use Clarinet or Stacks CLI to deploy the contract
-2. Update `CONTRACT_ADDRESS` in `src/utils/contractInteraction.ts`
+2. **Buyer deposits funds**
+   - Connects wallet
+   - Deposits STX into smart contract
+   - Funds locked until conditions met
 
-## Security Considerations
+3. **Seller delivers work**
+   - Marks escrow as complete
+   - Buyer notified to review
 
-- **Private Keys**: Never stored or transmitted
-- **Wallet Connection**: Uses secure Stacks Connect protocol
-- **Payment Verification**: Cross-references blockchain data
-- **CORS**: Configure API endpoints for production
+4. **Buyer releases payment**
+   - Reviews work
+   - Releases funds from contract to seller
+   - Transaction complete
 
-## Limitations (MVP)
+## 🌟 Key Features
 
-- **Storage**: Uses localStorage (not persistent across devices)
-- **Scaling**: No backend database
-- **Analytics**: Basic transaction tracking only
-- **Multi-currency**: Bitcoin only
+- ✅ **Trustless Escrow** - Smart contracts enforce rules
+- ✅ **No Chargebacks** - Blockchain payments are final
+- ✅ **Global Access** - Anyone with a Stacks wallet
+- ✅ **Low Fees** - Only blockchain transaction fees
+- ✅ **Fast Settlement** - ~10 minute block times
+- ✅ **Transparent** - All transactions verifiable on-chain
 
-## Future Enhancements
+## 🎯 Who It's For
 
-- Backend API with database
-- Multi-signature support
-- Lightning Network integration
-- Advanced analytics dashboard
-- Mobile app
-- Webhook notifications
+- 💼 **Freelancers** - Developers, designers, writers
+- 🎨 **Creators** - Digital artists, content creators
+- 📦 **Digital Sellers** - Ebook authors, course creators
+- 🌍 **Remote Workers** - Anyone doing online work globally
 
-## Contributing
+## 🔒 Security
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+- Non-custodial architecture
+- Open-source smart contracts
+- Auditable on Stacks blockchain
+- No private keys stored
+- Wallet-based authentication
 
-## License
+## 📚 Documentation
+
+- [Deployment Guide](./DEPLOYMENT.md)
+- [Quick Deploy](./QUICK_DEPLOY.md)
+- [Smart Contract Docs](./contracts/)
+
+## 🤝 Contributing
+
+Contributions welcome! Please read our contributing guidelines first.
+
+## 📄 License
 
 MIT License - see LICENSE file for details
 
-## Support
+## 🔗 Links
 
-For questions or issues:
-- Create an issue on GitHub
-- Check the documentation in `.md/plan.md`
-- Review the smart contract code in `contracts/`
+- [Stacks Explorer](https://explorer.stacks.co/?chain=testnet)
+- [Stacks Documentation](https://docs.stacks.co)
+- [Clarity Language](https://docs.stacks.co/clarity)
+
+---
+
+**Built with ₿ on Stacks**

@@ -14,7 +14,7 @@ interface Invoice {
   memo: string;
   status: 'pending' | 'paid';
   createdAt: string;
-  btcAddress: string;
+  stxAddress: string;
 }
 
 const InvoicePage = () => {
@@ -43,33 +43,46 @@ const InvoicePage = () => {
     setIsChecking(true);
     
     try {
-      // Use real payment monitoring
-      const { PaymentMonitor } = await import('@/utils/paymentMonitor');
-      const payments = await PaymentMonitor.checkPayments(invoice.btcAddress, invoice.amount);
+      // Use Stacks payment monitoring
+      const { StacksPaymentMonitor } = await import('@/utils/stacksPaymentMonitor');
       
-      if (payments.length > 0 && payments[0].confirmed) {
-        const updatedInvoice = { ...invoice, status: 'paid' as const };
-        setInvoice(updatedInvoice);
+      console.log('Checking payments for:', invoice.stxAddress);
+      console.log('Expected amount:', invoice.amount, 'STX');
+      
+      const payments = await StacksPaymentMonitor.checkPayments(invoice.stxAddress);
+      
+      console.log('Found payments:', payments);
+      
+      if (payments.length > 0) {
+        // Check if any payment matches (don't require exact amount match)
+        const matchingPayment = payments.find(p => p.tx_status === 'success');
         
-        // Update localStorage
-        const savedInvoices = localStorage.getItem('satsgate_invoices');
-        if (savedInvoices) {
-          const invoices: Invoice[] = JSON.parse(savedInvoices);
-          const updatedInvoices = invoices.map(inv => 
-            inv.id === invoiceId ? updatedInvoice : inv
-          );
-          localStorage.setItem('satsgate_invoices', JSON.stringify(updatedInvoices));
+        if (matchingPayment) {
+          const updatedInvoice = { ...invoice, status: 'paid' as const };
+          setInvoice(updatedInvoice);
+          
+          // Update localStorage
+          const savedInvoices = localStorage.getItem('satsgate_invoices');
+          if (savedInvoices) {
+            const invoices: Invoice[] = JSON.parse(savedInvoices);
+            const updatedInvoices = invoices.map(inv => 
+              inv.id === invoiceId ? updatedInvoice : inv
+            );
+            localStorage.setItem('satsgate_invoices', JSON.stringify(updatedInvoices));
+          }
+          
+          toast.success("Payment confirmed!");
+        } else if (payments.some(p => p.tx_status === 'pending')) {
+          toast.info("Payment detected! Waiting for confirmation...");
+        } else {
+          toast.info(`Found ${payments.length} transaction(s) but none are confirmed yet`);
         }
-        
-        toast.success("Payment confirmed!");
-      } else if (payments.length > 0 && !payments[0].confirmed) {
-        toast.info(`Payment detected! Waiting for confirmation (${payments[0].confirmations}/6)`);
       } else {
-        toast.info("No payment detected yet");
+        toast.info("No payment detected yet. Make sure you sent STX to the correct address.");
       }
     } catch (error) {
       console.error('Error checking payment:', error);
-      toast.error("Error checking payment status");
+      toast.error("Error checking payment status. Check console for details.");
     } finally {
       setIsChecking(false);
     }
@@ -123,7 +136,7 @@ const InvoicePage = () => {
               </div>
               
               <div className="text-4xl font-bold mb-2">
-                {invoice.amount} BTC
+                {invoice.amount} STX
               </div>
               
               {invoice.memo && (
@@ -138,10 +151,9 @@ const InvoicePage = () => {
                   <div className="flex justify-center">
                     <div className="p-4 bg-white rounded-lg">
                       <QRCodeSVG
-                        value={`bitcoin:${invoice.btcAddress}?amount=${invoice.amount}${invoice.memo ? `&label=${encodeURIComponent(invoice.memo)}` : ''}`}
+                        value={`stacks:${invoice.stxAddress}?amount=${invoice.amount}${invoice.memo ? `&memo=${encodeURIComponent(invoice.memo)}` : ''}`}
                         size={200}
                         level="M"
-                        includeMargin={true}
                       />
                     </div>
                   </div>
@@ -150,16 +162,16 @@ const InvoicePage = () => {
                   <div className="space-y-4">
                     <div>
                       <label className="text-sm font-medium text-muted-foreground">
-                        Bitcoin Address
+                        Stacks Address
                       </label>
                       <div className="flex items-center gap-2 mt-1">
                         <code className="flex-1 p-2 bg-secondary rounded text-sm font-mono break-all">
-                          {invoice.btcAddress}
+                          {invoice.stxAddress}
                         </code>
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => copyToClipboard(invoice.btcAddress)}
+                          onClick={() => copyToClipboard(invoice.stxAddress)}
                         >
                           <Copy className="w-4 h-4" />
                         </Button>
@@ -172,7 +184,7 @@ const InvoicePage = () => {
                       </label>
                       <div className="flex items-center gap-2 mt-1">
                         <code className="flex-1 p-2 bg-secondary rounded text-sm font-mono">
-                          {invoice.amount} BTC
+                          {invoice.amount} STX
                         </code>
                         <Button
                           variant="outline"
@@ -189,7 +201,7 @@ const InvoicePage = () => {
                   <div className="bg-secondary/50 p-4 rounded-lg">
                     <h3 className="font-semibold mb-2">How to pay:</h3>
                     <ol className="text-sm text-muted-foreground space-y-1">
-                      <li>1. Scan the QR code with your Bitcoin wallet</li>
+                      <li>1. Scan the QR code with your Stacks wallet</li>
                       <li>2. Or copy the address and amount manually</li>
                       <li>3. Send the exact amount to complete payment</li>
                       <li>4. Payment will be confirmed automatically</li>
@@ -213,11 +225,11 @@ const InvoicePage = () => {
                   </div>
                   <h3 className="text-xl font-semibold mb-2">Payment Confirmed!</h3>
                   <p className="text-muted-foreground mb-4">
-                    Your Bitcoin payment has been successfully received and confirmed on the blockchain.
+                    Your STX payment has been successfully received and confirmed on the Stacks blockchain.
                   </p>
                   <Button variant="outline" asChild>
                     <a 
-                      href={`https://mempool.space/address/${invoice.btcAddress}`}
+                      href={`https://explorer.stacks.co/address/${invoice.stxAddress}?chain=testnet`}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
