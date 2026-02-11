@@ -51,36 +51,54 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       
       // Extract addresses from the result
       if (result && result.addresses && Array.isArray(result.addresses)) {
-        // Find Stacks address (starts with 'S')
+        console.log('Addresses received:', result.addresses);
+        
+        // Find Stacks address (type: 'stacks' or starts with 'S')
         const stxAddr = result.addresses.find((addr: any) => 
-          addr.address && addr.address.startsWith('S')
+          addr.type === 'stacks' || 
+          (addr.address && (addr.address.startsWith('SP') || addr.address.startsWith('SM') || addr.address.startsWith('ST')))
         );
         
-        // Find Bitcoin address (payment purpose or doesn't start with 'S')
+        // Find Bitcoin address (type: 'bitcoin' or payment purpose)
         const btcAddr = result.addresses.find((addr: any) => 
-          addr.address && !addr.address.startsWith('S') && 
-          (addr.purpose === 'payment' || !addr.purpose)
+          addr.type === 'bitcoin' || 
+          addr.purpose === 'payment' ||
+          (addr.address && (addr.address.startsWith('bc1') || addr.address.startsWith('1') || addr.address.startsWith('3')))
         );
         
-        if (stxAddr) {
+        console.log('Extracted STX address:', stxAddr);
+        console.log('Extracted BTC address:', btcAddr);
+        
+        if (stxAddr && stxAddr.address) {
           setStxAddress(stxAddr.address);
+          console.log('Set STX address:', stxAddr.address);
         }
         
-        if (btcAddr) {
+        if (btcAddr && btcAddr.address) {
           setBtcAddress(btcAddr.address);
+          console.log('Set BTC address:', btcAddr.address);
         }
         
-        setIsConnected(true);
-        setUserData(result);
-        toast.success('Wallet connected successfully!');
+        if (stxAddr || btcAddr) {
+          setIsConnected(true);
+          setUserData(result);
+          toast.success('Wallet connected successfully!');
+        } else {
+          console.error('No valid addresses found in result');
+          toast.error('Could not extract wallet addresses');
+        }
       } else if (userSession.isUserSignedIn()) {
         // Fallback to userSession if result doesn't have addresses
+        console.log('Falling back to userSession');
         const userData = userSession.loadUserData();
         setUserData(userData);
         setIsConnected(true);
         setBtcAddress(userData.profile?.btcAddress?.p2wpkh?.mainnet || '');
         setStxAddress(userData.profile?.stxAddress?.mainnet || '');
         toast.success('Wallet connected successfully!');
+      } else {
+        console.error('No addresses in result and user not signed in');
+        toast.error('Failed to connect wallet');
       }
     } catch (error) {
       console.error('Error connecting wallet:', error);
